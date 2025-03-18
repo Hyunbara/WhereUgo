@@ -1,5 +1,6 @@
-import { API_KEYS } from "./config.js";
-import { fetchTravelData } from "../api/tourApi.js"; // 여행지 데이터를 불러오는 함수
+import { API_KEYS } from "./config.js"; // ✅ 올바른 config.js import
+import { fetchTravelData } from "../api/tourApi.js";
+import { loadKakaoMapScript, showLocationOnMap } from "../api/kakaoMap.js";
 
 document.addEventListener("DOMContentLoaded", () => {
   const questionContainer = document.getElementById("questionContainer");
@@ -9,14 +10,15 @@ document.addEventListener("DOMContentLoaded", () => {
   const resultContainer = document.getElementById("resultContainer");
   const resultList = document.getElementById("resultList");
 
+  if (!questionText || !optionsContainer || !nextButton) {
+    console.error("❌ HTML 요소를 찾을 수 없습니다. index.html을 확인하세요.");
+    return;
+  }
+
   let currentQuestionIndex = 0;
   let userAnswers = {};
 
-  // ✅ API 키가 정상적으로 불러와지는지 확인하는 로그 추가
-  console.log("✅ 공공데이터포털 API 키:", API_KEYS.TOUR_API_KEY);
-  console.log("✅ 네이버 검색 API 키:", API_KEYS.NAVER_CLIENT_ID);
-  console.log("✅ 카카오맵 API 키:", API_KEYS.KAKAO_MAP_API_KEY);
-
+  // ✅ `questions` 배열 추가 (문제 해결)
   const questions = [
     {
       text: "어떤 여행을 원하시나요?",
@@ -45,12 +47,17 @@ document.addEventListener("DOMContentLoaded", () => {
     },
   ];
 
+  function nextQuestion() {
+    currentQuestionIndex++;
+    loadQuestion();
+  }
+
   function loadQuestion() {
     if (currentQuestionIndex < questions.length) {
       const currentQuestion = questions[currentQuestionIndex];
 
       questionText.textContent = currentQuestion.text;
-      optionsContainer.innerHTML = ""; // 기존 버튼 삭제
+      optionsContainer.innerHTML = "";
 
       currentQuestion.options.forEach((option) => {
         const button = document.createElement("button");
@@ -63,22 +70,16 @@ document.addEventListener("DOMContentLoaded", () => {
         optionsContainer.appendChild(button);
       });
 
-      nextButton.classList.add("hidden"); // '다음' 버튼 숨김
+      nextButton.classList.add("hidden");
     } else {
       showRecommendation();
     }
-  }
-
-  function nextQuestion() {
-    currentQuestionIndex++;
-    loadQuestion();
   }
 
   async function showRecommendation() {
     questionContainer.classList.add("hidden");
     resultContainer.classList.remove("hidden");
 
-    // ✅ 사용자의 답변을 기반으로 여행지를 추천하는 로직
     let recommendedRegion = "서울"; // 기본값
 
     if (userAnswers.nature === "바다") {
@@ -95,7 +96,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
     console.log("🌍 추천 지역:", recommendedRegion);
 
-    // ✅ 공공데이터포털 API를 이용하여 추천 여행지 가져오기
     const recommendations = await fetchTravelData(recommendedRegion);
 
     resultList.innerHTML = "";
@@ -106,9 +106,21 @@ document.addEventListener("DOMContentLoaded", () => {
 
     recommendations.forEach((place) => {
       const listItem = document.createElement("li");
-      listItem.classList.add("p-2", "bg-gray-100", "rounded-lg");
-      listItem.innerHTML = `<strong>${place.name}</strong> - ${place.address}`;
+      listItem.classList.add("p-2", "bg-gray-100", "rounded-lg", "cursor-pointer");
+      listItem.innerHTML = `<strong>${place.title}</strong><br>${place.addr1 || "주소 정보 없음"}`;
+
+      // ✅ 여행지 클릭 시 해당 장소를 지도에서 보여줌
+      listItem.addEventListener("click", () => {
+        console.log("🗺️ 선택된 여행지:", place);
+        loadKakaoMapScript(() => showLocationOnMap(place));
+      });
+
       resultList.appendChild(listItem);
+    });
+
+    // ✅ 카카오맵을 한 번만 로드
+    loadKakaoMapScript(() => {
+      console.log("🗺️ 카카오맵 로드 완료");
     });
   }
 

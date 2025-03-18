@@ -5,11 +5,18 @@ export async function fetchTravelData(region) {
   const API_KEY = API_KEYS.TOUR_API_KEY;
 
   try {
-    const response = await fetch(`${API_URL}?serviceKey=${API_KEY}&_type=json&keyword=${region}`);
+    const response = await fetch(
+      `${API_URL}?serviceKey=${API_KEY}&MobileOS=ETC&MobileApp=WhereUgo&_type=json&numOfRows=10&pageNo=1&keyword=${region}`
+    );
+
     if (!response.ok) throw new Error("데이터 불러오기 실패!");
 
     const data = await response.json();
-    console.log("✅ 여행지 데이터:", data);
+    console.log("✅ API 응답 데이터:", data);
+
+    if (!data.response || !data.response.body || !data.response.body.items) {
+      throw new Error("API 응답이 올바르지 않습니다.");
+    }
 
     return data.response.body.items.item;
   } catch (error) {
