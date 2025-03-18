@@ -1,4 +1,5 @@
-// api/kakaoMap.js
+import { API_KEYS } from "../config.js";
+
 export function loadMap(containerId, places) {
   const container = document.getElementById(containerId);
   const options = {
@@ -8,16 +9,22 @@ export function loadMap(containerId, places) {
 
   const map = new kakao.maps.Map(container, options);
 
-  // 마커 추가
   places.forEach((place) => {
     const marker = new kakao.maps.Marker({
       position: new kakao.maps.LatLng(place.latitude, place.longitude),
       map: map,
     });
 
-    // 마커 클릭 이벤트 추가
     kakao.maps.event.addListener(marker, "click", () => {
       alert(`${place.name}\n주소: ${place.address}`);
     });
   });
+}
+
+// ✅ 카카오 지도 API 동적 로드
+export function loadKakaoMapScript() {
+  const script = document.createElement("script");
+  script.src = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${API_KEYS.KAKAO_MAP_API_KEY}&libraries=services`;
+  script.async = true;
+  document.head.appendChild(script);
 }
